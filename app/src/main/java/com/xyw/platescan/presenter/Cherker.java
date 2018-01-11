@@ -11,7 +11,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 
-import com.xyw.platescan.model.Object;
+import com.xyw.platescan.model.HttpObject;
 import com.xyw.platescan.util.WebService;
 import com.xyw.platescan.view.ViewInterface;
 
@@ -27,15 +27,14 @@ import java.util.List;
 
 public class Cherker implements WebService.webServiceCallback {
 
-    private Context mContext;
-    private ViewInterface mViewHandler;
-    private checkListener mlistener;
-
     private static String[] PERMISSIONS = new String[]{
             //危险权限组 read camera,imei
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.CAMERA
     };
+    private Context mContext;
+    private ViewInterface mViewHandler;
+    private checkListener mlistener;
     private String imei;
 
     /**
@@ -43,7 +42,7 @@ public class Cherker implements WebService.webServiceCallback {
      *
      * @param object 对象
      */
-    public Cherker(java.lang.Object object) {
+    public Cherker(Object object) {
         mContext = (Context) object;
         mViewHandler = (ViewInterface) object;
         mlistener = (checkListener) object;
@@ -75,16 +74,16 @@ public class Cherker implements WebService.webServiceCallback {
         TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         imei = tm.getImei();
         if (readMyAuth()) {
-            mViewHandler.functionValid("授权完成");
+            mViewHandler.onValidateCompleted(true, imei);
             return;
         } else {
             //此处开始联网验证
             //方法名:GetCodeId 参数名:CodeID 参数值:imei
-            Object httpObject = new Object();
-            httpObject.setMethodName("GetCodeId");
-            httpObject.setKeyArray(new String[]{"CodeId"});
-            httpObject.setValueArray(new String[]{imei});
-            WebService webService = new WebService(mContext, httpObject);
+            HttpObject httpHttpObject = new HttpObject();
+            httpHttpObject.setMethodName("GetCodeId");
+            httpHttpObject.setKeyArray(new String[]{"CodeId"});
+            httpHttpObject.setValueArray(new String[]{imei});
+            WebService webService = new WebService(mContext, httpHttpObject);
             webService.doRequest(this);
         }
 
@@ -94,11 +93,11 @@ public class Cherker implements WebService.webServiceCallback {
     public void forceValidate() {
         TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
         imei = tm.getImei();
-        Object httpObject = new Object();
-        httpObject.setMethodName("GetCodeId");
-        httpObject.setKeyArray(new String[]{"CodeId"});
-        httpObject.setValueArray(new String[]{imei});
-        WebService webService = new WebService(mContext, httpObject);
+        HttpObject httpHttpObject = new HttpObject();
+        httpHttpObject.setMethodName("GetCodeId");
+        httpHttpObject.setKeyArray(new String[]{"CodeId"});
+        httpHttpObject.setValueArray(new String[]{imei});
+        WebService webService = new WebService(mContext, httpHttpObject);
         webService.doRequest(this);
     }
 
@@ -137,23 +136,6 @@ public class Cherker implements WebService.webServiceCallback {
         }
     }
 
-    @Override
-    public void onLoading() {
-        mViewHandler.functionInvalid("正在检查中,请稍后");
-        wipeAuth();
-    }
-
-
-    @Override
-    public void onQueryCompleted(Object obj) {
-        if (obj.getResultData().equals("0")) {
-            mViewHandler.functionValid("权限检查成功!");
-            writeAuth();
-        } else {
-            mViewHandler.functionInvalid("未获得权限-->" + imei);
-            wipeAuth();
-        }
-    }
 
     private void wipeAuth() {
         SharedPreferences s = mContext.getSharedPreferences("auth", Context.MODE_PRIVATE);
@@ -169,17 +151,37 @@ public class Cherker implements WebService.webServiceCallback {
         editor.apply();
     }
 
-    public interface checkListener {
-        void Denied();
+    @Override
+    public void onLoading() {
+        mViewHandler.onLoading();
     }
 
     @Override
     public void onValidateCompleted(boolean isValid) {
-
+        mViewHandler.onValidateCompleted(isValid, imei);
+        if (isValid) {
+            writeAuth();
+        } else {
+            wipeAuth();
+        }
     }
 
     @Override
-    public void onErrorOccurs(Object e) {
+    public void onTryCatchError(Exception e) {
+        mViewHandler.onTryCatchError(e);
+    }
 
+    @Override
+    public void onQueryCompleted(HttpObject obj) {
+        mViewHandler.onQueryCompleted(obj);
+    }
+
+    @Override
+    public void onRequestTimeout() {
+        mViewHandler.onRequestTimeout();
+    }
+
+    public interface checkListener {
+        void Denied();
     }
 }

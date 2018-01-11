@@ -59,7 +59,7 @@ public class CarStatus implements Serializable {
     private String Shr;
     private String Shbz;
     private String Txlx;
-    private Object Fzsj;
+    private HttpObject Fzsj;
     private String Yxqs;
     private String Yxqz;
     private String Lczt;
@@ -89,7 +89,7 @@ public class CarStatus implements Serializable {
     private String Ddshsj;
     private String Ddshjg;
     private String Yhdh;
-    private Object HPZLMC;
+    private HttpObject HPZLMC;
     private String Yhly;
 
     public String getTxzbh() {
@@ -156,11 +156,11 @@ public class CarStatus implements Serializable {
         this.Txlx = Txlx;
     }
 
-    public Object getFzsj() {
+    public HttpObject getFzsj() {
         return Fzsj;
     }
 
-    public void setFzsj(Object Fzsj) {
+    public void setFzsj(HttpObject Fzsj) {
         this.Fzsj = Fzsj;
     }
 
@@ -396,11 +396,11 @@ public class CarStatus implements Serializable {
         this.Yhdh = Yhdh;
     }
 
-    public Object getHPZLMC() {
+    public HttpObject getHPZLMC() {
         return HPZLMC;
     }
 
-    public void setHPZLMC(Object HPZLMC) {
+    public void setHPZLMC(HttpObject HPZLMC) {
         this.HPZLMC = HPZLMC;
     }
 

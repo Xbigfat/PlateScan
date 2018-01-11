@@ -1,6 +1,6 @@
 package com.xyw.platescan.view;
 
-import com.xyw.platescan.model.CarStatus;
+import com.xyw.platescan.model.HttpObject;
 
 /**
  * Created by 31429 on 2018/1/11.
@@ -8,10 +8,19 @@ import com.xyw.platescan.model.CarStatus;
 
 public interface ViewInterface {
 
-    //权限获取失败
-    void functionInvalid(String msg);
+    //验证过程中
+    void onLoading();
 
-    //权限获取成功
-    void functionValid(Object obj);
+    //验证授权
+    void onValidateCompleted(boolean isValid, String imei);
+
+    //出现错误
+    void onTryCatchError(Exception e);
+
+    //查询结果回调
+    void onQueryCompleted(HttpObject obj);
+
+    //超时回调
+    void onRequestTimeout();
 
 }

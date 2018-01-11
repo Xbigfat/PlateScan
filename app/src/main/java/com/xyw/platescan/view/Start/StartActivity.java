@@ -17,6 +17,7 @@ import android.widget.Toast;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.xyw.platescan.R;
+import com.xyw.platescan.model.HttpObject;
 import com.xyw.platescan.presenter.Cherker;
 import com.xyw.platescan.util.Parameters;
 import com.xyw.platescan.view.BaseActivity;
@@ -77,7 +78,7 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
         setContentView(R.layout.start_activity);
         initView();
         //首先将功能禁用
-        this.functionInvalid(null);
+        setFunction(false, null);
         //初始化检查器
         cherker = new Cherker(this);
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -107,22 +108,6 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         cherker.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    @Override
-    public void functionInvalid(String msg) {
-        setFunction(false);
-        if (msg != null) {
-            tipsTv.setText(msg);
-        }
-    }
-
-    @Override
-    public void functionValid(Object object) {
-        setFunction(true);
-        if (object != null && object instanceof String) {
-            tipsTv.setText(object.toString());
-        }
     }
 
     @Override
@@ -173,13 +158,44 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
         }
     }
 
-    public void setFunction(boolean b) {
+    @Override
+    public void onLoading() {
+        tipsTv.setText("正在获取授权...");
+    }
+
+    @Override
+    public void onValidateCompleted(boolean isValid, String imei) {
+        setFunction(isValid, imei);
+
+    }
+
+    @Override
+    public void onTryCatchError(Exception e) {
+        e.printStackTrace();
+        tipsTv.setText("soap Fault !");
+    }
+
+    @Override
+    public void onQueryCompleted(HttpObject obj) {
+
+    }
+
+    @Override
+    public void onRequestTimeout() {
+        tipsTv.setText("网络出了点小问题...");
+    }
+
+    public void setFunction(boolean b, String imei) {
         if (b) {
             scanBtn.setEnabled(true);
             queryBtn.setEnabled(true);
+            tipsTv.setText("授权完成");
         } else {
             scanBtn.setEnabled(false);
             queryBtn.setEnabled(false);
+            tipsTv.setText("授权失败了 -> " + (imei == null ? "" : imei));
         }
+
+
     }
 }
