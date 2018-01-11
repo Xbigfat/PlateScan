@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+    正常状态：normal 按下状态: pressed 禁用状态: ban
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/btn_pressed" android:state_pressed="true" />
+    <item android:drawable="@drawable/btn_ban" android:state_enabled="false" />
+    <item android:drawable="@drawable/btn_normal" />
+</selector>
