@@ -17,11 +17,13 @@ import android.widget.Toast;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.xyw.platescan.R;
-import com.xyw.platescan.model.HttpObject;
-import com.xyw.platescan.presenter.Cherker;
+import com.xyw.platescan.model.CarStatus;
+import com.xyw.platescan.presenter.StartView.StartCheckerPresenter;
 import com.xyw.platescan.util.Parameters;
+import com.xyw.platescan.util.Utils;
 import com.xyw.platescan.view.BaseActivity;
-import com.xyw.platescan.view.ViewInterface;
+import com.xyw.platescan.view.ResultActivity.OffLineRes;
+import com.xyw.platescan.view.ResultActivity.OnLineRes;
 import com.xyw.platescan.zencryption.AES;
 
 /**
@@ -47,9 +49,9 @@ import com.xyw.platescan.zencryption.AES;
  * </pre>
  */
 
-public class StartActivity extends BaseActivity implements ViewInterface, Cherker.checkListener, View.OnClickListener {
+public class StartActivity extends BaseActivity implements StartActivityInterface, View.OnClickListener {
 
-    private Cherker cherker;
+    private StartCheckerPresenter startCheckerPresenter;
     /**
      * 车辆类型spinner
      */
@@ -80,13 +82,13 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
         //首先将功能禁用
         setFunction(false, null);
         //初始化检查器
-        cherker = new Cherker(this);
+        startCheckerPresenter = new StartCheckerPresenter(this);
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // API >= 23 动态权限验证 -> 功能授权
-            cherker.checkPermission();
+            startCheckerPresenter.checkPermission();
         } else {
             // API < 23 直接进行功能授权
-            cherker.validate();
+            startCheckerPresenter.validate();
         }
     }
 
@@ -107,14 +109,9 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        cherker.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        startCheckerPresenter.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    @Override
-    public void Denied() {
-        makeToast(this, "未能获取到需要的权限,请尝试在系统菜单授权");
-        controller.quit();
-    }
 
     @Override
     public void onClick(View v) {
@@ -122,15 +119,25 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
             default:
                 break;
             case R.id.query_btn:
-                //doQuery();
+                Intent intent = new Intent(StartActivity.this, OnLineRes.class);
+                CarStatus car = new CarStatus();
+                car.setHpzl((Parameters.hplx[hpzlSpinner.getSelectedItemPosition()]).substring(0, 2));
+                String hphm = hphmEt.getText().toString().trim();
+                if (hphm.equals("")) {
+                    makeToast(this, "车牌号码不能为空");
+                    return;
+                }
+                car.setHphm(hphmEt.getText().toString().trim());
+                intent.putExtra("online", car);
+                startActivity(intent);
                 break;
             case R.id.scan_btn:
                 IntentIntegrator intentIntegrator = new IntentIntegrator(StartActivity.this);
-                //intentIntegrator.setPrompt("     请将扫描区域对准二维码\n按下音量键开启或者关闭闪光灯").initiateScan();
+                intentIntegrator.setPrompt("     请将扫描区域对准二维码\n按下音量键开启或者关闭闪光灯").initiateScan();
                 intentIntegrator.initiateScan();
                 break;
             case R.id.change_server_tv:
-                //changeServerGlobal(MainActivity.this);
+                Utils.changeServerGlobal(StartActivity.this, startCheckerPresenter);
                 break;
         }
     }
@@ -141,15 +148,14 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
         if (result != null) {
             if (result.getContents() == null) {
-                Toast.makeText(this, "用户取消扫描", Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, "用户取消扫描", Toast.LENGTH_LONG).show();
             } else {
                 try {
                     String scanResult = result.getContents();
                     scanResult = AES.Decrypt(scanResult);
                     Log.i(Parameters.TAG, scanResult);
-                    //Intent intent = new Intent(MainActivity.this, ScanProviderOffline.class);
-                    //intent.putExtra("data", scanResult);
-                    //startActivity(intent);
+                    Intent intent = new Intent(StartActivity.this, OffLineRes.class);
+                    intent.putExtra("ofline", scanResult);
                 } catch (Exception e) {
                     Toast.makeText(getApplicationContext(), "非法的二维码信息", Toast.LENGTH_LONG).show();
                     e.printStackTrace();
@@ -170,14 +176,15 @@ public class StartActivity extends BaseActivity implements ViewInterface, Cherke
     }
 
     @Override
-    public void onTryCatchError(Exception e) {
-        e.printStackTrace();
-        tipsTv.setText("soap Fault !");
+    public void onPermissionDenied() {
+        makeToast(this, "未能获取到需要的权限,请尝试在系统菜单授权");
+        controller.quit();
     }
 
     @Override
-    public void onQueryCompleted(HttpObject obj) {
-
+    public void onTryCatchError(Exception e) {
+        e.printStackTrace();
+        tipsTv.setText("soap Fault !");
     }
 
     @Override

@@ -50,7 +50,6 @@ public class CarStatus implements Serializable {
      * HPZLMC : null
      * Yhly : 0
      */
-
     private String Txzbh;
     private String Hpzl;
     private String Hphm;

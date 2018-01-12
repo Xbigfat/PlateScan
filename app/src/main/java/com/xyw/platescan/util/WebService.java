@@ -109,36 +109,48 @@ public class WebService {
                             ht.call(Parameters.nameSpace + "/" + httpObject.getMethodName(), envelope);
                             break;
                         } catch (Exception e) {
+
+                            //此错误不会终止请求,但是会在控制台打印出出错的原因,同时会将exception发送到调用的presenter
                             e.printStackTrace();
                             Log.i(Parameters.TAG, "the " + String.valueOf(i + 1) + " times retry");
                             Message msg2 = mHandler.obtainMessage();
                             msg2.what = WebService.TRY_CATCH_ERROR;
                             msg2.obj = e;
                             mHandler.sendMessage(msg2);
+
                         }
                         i++;
                         if (i == 3) {
+
+                            //此错误表示已经进行了3次 webservice 请求,都失败,终止此次调用,回调 onTimeOut()
                             Message msg3 = mHandler.obtainMessage();
                             msg3.what = WebService.REQUEST_TIMEOUT;
                             mHandler.sendMessage(msg3);
                             return;
+
                         }
                     }
                     httpObject.setResultData(envelope.getResponse().toString());
                     String data = httpObject.getResultData();
 
                     if (data.length() == 1) {
+
+                        //判断数据长度,如果长度为1 表示是验证请求,直接回调 validate
                         Message msg4 = mHandler.obtainMessage();
                         msg4.what = WebService.VALIDATE_COMPLETED;
                         msg4.obj = Integer.valueOf(data) == 0;
                         mHandler.sendMessage(msg4);
                         return;
                     }
+
+                    //如果数据长度不为1,表示请求了别的数据,收到的数据先解密,然后放到 httpObject中返回
+                    //httpObject中还封装了此次请求的参数的键值对,方法名
                     httpObject.setResultData(AES.Decrypt(data));
                     Message msg5 = mHandler.obtainMessage();
                     msg5.what = QUERY_COMPLETED;
                     msg5.obj = httpObject;
                     mHandler.sendMessage(msg5);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                     Message msg6 = mHandler.obtainMessage();

@@ -30,14 +30,18 @@ public class BaseActivity extends AppCompatActivity {
         controller.remove(this);
     }
 
+    public ActivityController getController() {
+        return controller;
+    }
+
     /**
      * 展示土司
      *
-     * @param view 需要展示吐司的界面
-     * @param msg  提示内容
+     * @param activity 需要展示吐司的界面
+     * @param msg      提示内容
      */
     @SuppressLint("ShowToast")
-    public static void makeToast(Activity activity, String msg) {
+    public void makeToast(Activity activity, String msg) {
         if (mToast == null) {
             mToast = Toast.makeText(activity, msg, Toast.LENGTH_LONG);
         } else {

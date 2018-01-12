@@ -1,4 +1,4 @@
-package com.xyw.platescan.presenter;
+package com.xyw.platescan.presenter.StartView;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -13,7 +13,7 @@ import android.telephony.TelephonyManager;
 
 import com.xyw.platescan.model.HttpObject;
 import com.xyw.platescan.util.WebService;
-import com.xyw.platescan.view.ViewInterface;
+import com.xyw.platescan.view.Start.StartActivityInterface;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.List;
  * Created by 31429 on 2018/1/11.
  */
 
-public class Cherker implements WebService.webServiceCallback {
+public class StartCheckerPresenter implements WebService.webServiceCallback {
 
     private static String[] PERMISSIONS = new String[]{
             //危险权限组 read camera,imei
@@ -33,8 +33,7 @@ public class Cherker implements WebService.webServiceCallback {
             Manifest.permission.CAMERA
     };
     private Context mContext;
-    private ViewInterface mViewHandler;
-    private checkListener mlistener;
+    private StartActivityInterface mViewHandler;
     private String imei;
 
     /**
@@ -42,10 +41,34 @@ public class Cherker implements WebService.webServiceCallback {
      *
      * @param object 对象
      */
-    public Cherker(Object object) {
+    public StartCheckerPresenter(Object object) {
         mContext = (Context) object;
-        mViewHandler = (ViewInterface) object;
-        mlistener = (checkListener) object;
+        mViewHandler = (StartActivityInterface) object;
+    }
+
+    /**
+     * 静态方法,强制进行版本更新检查
+     *
+     * @param context            检查的上下文对象
+     * @param webServiceCallback 回调
+     */
+    @SuppressLint("all")
+    public static void forceValidate(Context context, WebService.webServiceCallback webServiceCallback) {
+        TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        String imei = tm.getImei();
+        HttpObject httpHttpObject = new HttpObject();
+        httpHttpObject.setMethodName("GetCodeId");
+        httpHttpObject.setKeyArray(new String[]{"CodeId"});
+        httpHttpObject.setValueArray(new String[]{imei});
+        WebService webService = new WebService(context, httpHttpObject);
+        webService.doRequest(webServiceCallback);
+    }
+
+    public static void wipeAuth(Context context) {
+        SharedPreferences s = context.getSharedPreferences("auth", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = s.edit();
+        editor.clear();
+        editor.apply();
     }
 
     /**
@@ -89,18 +112,6 @@ public class Cherker implements WebService.webServiceCallback {
 
     }
 
-    @SuppressLint("all")
-    public void forceValidate() {
-        TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
-        imei = tm.getImei();
-        HttpObject httpHttpObject = new HttpObject();
-        httpHttpObject.setMethodName("GetCodeId");
-        httpHttpObject.setKeyArray(new String[]{"CodeId"});
-        httpHttpObject.setValueArray(new String[]{imei});
-        WebService webService = new WebService(mContext, httpHttpObject);
-        webService.doRequest(this);
-    }
-
     /**
      * 功能授权,首先读取本地授权文件
      * 读取到授权文件后,返回true
@@ -124,24 +135,16 @@ public class Cherker implements WebService.webServiceCallback {
                 if (grantResults.length > 0) {
                     for (int i : grantResults) {
                         if (i != PackageManager.PERMISSION_GRANTED) {
-                            mlistener.Denied();
+                            mViewHandler.onPermissionDenied();
                             return;
                         }
                     }
                     this.validate();
                 } else {
-                    mlistener.Denied();
+                    mViewHandler.onPermissionDenied();
                 }
             }
         }
-    }
-
-
-    private void wipeAuth() {
-        SharedPreferences s = mContext.getSharedPreferences("auth", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = s.edit();
-        editor.clear();
-        editor.apply();
     }
 
     private void writeAuth() {
@@ -162,7 +165,7 @@ public class Cherker implements WebService.webServiceCallback {
         if (isValid) {
             writeAuth();
         } else {
-            wipeAuth();
+            wipeAuth(mContext);
         }
     }
 
@@ -173,7 +176,6 @@ public class Cherker implements WebService.webServiceCallback {
 
     @Override
     public void onQueryCompleted(HttpObject obj) {
-        mViewHandler.onQueryCompleted(obj);
     }
 
     @Override
@@ -181,7 +183,4 @@ public class Cherker implements WebService.webServiceCallback {
         mViewHandler.onRequestTimeout();
     }
 
-    public interface checkListener {
-        void Denied();
-    }
 }
