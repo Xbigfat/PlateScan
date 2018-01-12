@@ -99,7 +99,7 @@ public class Utils {
                 }
                 mContext.makeToast(mContext, "服务器地址成功更改为：\n http://" + ip + ":" + port + "/" + service + "\n请重新打开应用");
                 mContext.getController().quit();
-                presenter.wipeAuth();
+                presenter.wipeAuth(mContext);
             }
         });
     }
